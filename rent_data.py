@@ -3,13 +3,15 @@ from logging import DEBUG
 from bs4 import BeautifulSoup
 from datetime import datetime
 from craigslist import CraigslistHousing
-from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, Boolean, exists
+from sqlalchemy import create_engine, Column, Integer, BigInteger, Float, String, DateTime, Boolean, exists
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
+from config import USER, PASS, DB
+
 CL_DATE_FORMAT = "%Y-%m-%d %H:%M"
-CL_RESULTS = 3000
-db_engine = create_engine('sqlite:///rent_data.db')
+CL_RESULTS = 100
+db_engine = create_engine("postgresql+psycopg2://{}:{}@/{}".format(USER, PASS, DB))
 
 Session = sessionmaker(bind=db_engine)
 session = Session()
@@ -18,9 +20,9 @@ Base = declarative_base()
 class RentalProperty(Base):
     __tablename__ = 'rental_property'
 
-    id = Column(Integer, primary_key=True)
-    cl_id = Column(Integer, unique=True)
-    repost_of_id = Column(Integer)
+    id = Column(BigInteger, primary_key=True)
+    cl_id = Column(BigInteger, unique=True)
+    repost_of_id = Column(BigInteger)
     url = Column(String)
     date_updated = Column(DateTime)
     price = Column(Integer)
@@ -48,9 +50,9 @@ class RentalProperty(Base):
 class RentalRoom(Base):
     __tablename__ = 'rental_room'
 
-    id = Column(Integer, primary_key=True)
-    cl_id = Column(Integer, unique=True)
-    repost_of_id = Column(Integer)
+    id = Column(BigInteger, primary_key=True)
+    cl_id = Column(BigInteger, unique=True)
+    repost_of_id = Column(BigInteger)
     date_updated = Column(DateTime)
     price = Column(Integer)
     state = Column(String)
@@ -112,6 +114,7 @@ def add_rooms(loc):
 
         db_room = session.query(RentalRoom).filter(RentalRoom.cl_id==room['id']).first()
         if db_room is not None:
+            print("found existing place")
             continue
         else:
             rental_room.cl_id = room['id']
@@ -161,11 +164,12 @@ def add_rentals(loc):
 
             # check if this already is existing in the DB
             prop = session.query(RentalProperty).filter(RentalProperty.cl_id==rental['id']).first()
+            print(rental['id'])
 
             if prop is not None:
-                continue
                 print(rental['last_updated'], prop.date_updated)
                 print(type(datetime.strptime(rental['last_updated'], CL_DATE_FORMAT)))
+                continue
             else:
                 rental_property.cl_id = rental['id']
                 rental_property.repost_of_id = rental['repost_of']
