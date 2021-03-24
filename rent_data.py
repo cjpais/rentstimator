@@ -7,11 +7,14 @@ from sqlalchemy import create_engine, Column, Integer, BigInteger, Float, String
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from config import USER, PASS, DB
+#from config import USER, PASS, DB
 
 CL_DATE_FORMAT = "%Y-%m-%d %H:%M"
 CL_RESULTS = 100
-db_engine = create_engine("postgresql+psycopg2://{}:{}@/{}".format(USER, PASS, DB))
+
+#db_engine = create_engine("postgresql+psycopg2://{}:{}@/{}".format(USER, PASS, DB))
+
+db_engine = create_engine("sqlite:///rent.db")
 
 Session = sessionmaker(bind=db_engine)
 session = Session()
@@ -20,7 +23,7 @@ Base = declarative_base()
 class RentalProperty(Base):
     __tablename__ = 'rental_property'
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     cl_id = Column(BigInteger, unique=True)
     repost_of_id = Column(BigInteger)
     url = Column(String)
@@ -50,7 +53,7 @@ class RentalProperty(Base):
 class RentalRoom(Base):
     __tablename__ = 'rental_room'
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     cl_id = Column(BigInteger, unique=True)
     repost_of_id = Column(BigInteger)
     date_updated = Column(DateTime)
@@ -121,7 +124,7 @@ def add_rooms(loc):
             rental_room.repost_of_id = room['repost_of']
             rental_room.url = room['url']
             rental_room.date_updated = datetime.strptime(room['last_updated'], CL_DATE_FORMAT)
-            rental_room.price = int(room['price'].replace('$',''))
+            rental_room.price = int(room['price'].replace('$','').replace(',',''))
             rental_room.state = loc['state'] 
             rental_room.metro = loc['city']
             if room.get('area'):
@@ -175,7 +178,7 @@ def add_rentals(loc):
                 rental_property.repost_of_id = rental['repost_of']
                 rental_property.url = rental['url']
                 rental_property.date_updated = datetime.strptime(rental['last_updated'], CL_DATE_FORMAT)
-                rental_property.price = int(rental['price'].replace('$',''))
+                rental_property.price = int(rental['price'].replace('$','').replace(',',''))
                 rental_property.state = loc['state'] 
                 rental_property.metro = loc['city']
                 rental_property.bedrooms = rental['bedrooms']
@@ -187,9 +190,10 @@ def add_rentals(loc):
                     rental_property.coords = str(rental['geotag'][0]) + ',' + str(rental['geotag'][1])
                 else:
                     continue
-                rental_property.housing_type = rental['house_type']
-                rental_property.laundry_type = rental['laundry_type']
-                rental_property.parking_type = rental['parking_type']
+                print(rental)
+                rental_property.housing_type = rental['housing_type']
+                rental_property.laundry_type = rental['laundry']
+                rental_property.parking_type = rental['parking']
                 rental_property.furnished = rental['furnished']
                 rental_property.cats_allowed = rental['cats_ok']
                 rental_property.dogs_allowed = rental['dogs_ok']
@@ -201,7 +205,7 @@ def add_rentals(loc):
 
 
 def add_loc_to_db(loc):
-    add_rentals(loc)
+    #add_rentals(loc)
     add_rooms(loc)
 
 def main():
@@ -212,6 +216,7 @@ def main():
     print(cl_loc_dict)
 
     for location in cl_loc_dict:
+        #add_loc_to_db(debug_loc)
         pass
 
     debug_loc = {'city': 'san diego', 'state': 'California', 'site': 'sandiego'}

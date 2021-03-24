@@ -1,5 +1,6 @@
 requests
 bs4
 sqlalchemy
-psycopg2
+sqlite3
+#psycopg2
 #python-craigslist you need to use my fork and install it https://github.com/cjpais/python-craigslist
